@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchDotaBot", "TwitchDotaBot\TwitchDotaBot.csproj", "{2634F5EA-F719-4282-876E-F28B83C9CD05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dota2Dispenser.Shared", "Dota2Dispenser.Shared\Dota2Dispenser.Shared.csproj", "{62047C73-DD00-4B46-A687-87D9BE417731}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2634F5EA-F719-4282-876E-F28B83C9CD05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2634F5EA-F719-4282-876E-F28B83C9CD05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2634F5EA-F719-4282-876E-F28B83C9CD05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2634F5EA-F719-4282-876E-F28B83C9CD05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62047C73-DD00-4B46-A687-87D9BE417731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62047C73-DD00-4B46-A687-87D9BE417731}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62047C73-DD00-4B46-A687-87D9BE417731}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62047C73-DD00-4B46-A687-87D9BE417731}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
