@@ -6,9 +6,9 @@ namespace TwitchDotaBot.Twitch;
 
 public class TwitchApiConfig
 {
-    public string ClientId { get; set; }
-    public string Secret { get; set; }
-    public string RefreshToken { get; set; }
+    public required string ClientId { get; init; }
+    public required string Secret { get; init; }
+    public required string RefreshToken { get; init; }
 }
 
 public class SuperApi

@@ -9,7 +9,7 @@ namespace TwitchDotaBot.Dota;
 
 public class DotaConfig
 {
-    public Uri ServerAddress { get; set; }
+    public required Uri ServerAddress { get; init; }
 }
 
 public class DotaClient : IHostedService

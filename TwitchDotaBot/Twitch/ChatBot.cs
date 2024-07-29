@@ -5,8 +5,8 @@ namespace TwitchDotaBot.Twitch;
 
 public class ChatBotConfig
 {
-    public string Username { get; set; }
-    public string Token { get; set; }
+    public required string Username { get; init; }
+    public required string Token { get; init; }
 }
 
 public class ChatBot : IHostedService

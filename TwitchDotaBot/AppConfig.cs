@@ -2,7 +2,7 @@ namespace TwitchDotaBot;
 
 public class AppConfig
 {
-    public string TwitchUsername { get; set; }
-    public string TwitchId { get; set; }
-    public ulong SteamId { get; set; }
+    public required string TwitchUsername { get; init; }
+    public required string TwitchId { get; init; }
+    public required ulong SteamId { get; init; }
 }
