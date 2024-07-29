@@ -31,4 +31,15 @@ public abstract class BaseCommand
 
         return match.DetailsInfo.RadiantWin == radiant;
     }
+
+    public static string GetTimeString(TimeSpan time)
+    {
+        if (time.TotalSeconds <= 60)
+            return $"{time.TotalSeconds:F0} секунд";
+
+        if (time.TotalMinutes <= 60)
+            return $"{time.TotalMinutes:F0} минут";
+
+        return $"{time.TotalHours:F0} часов";
+    }
 }

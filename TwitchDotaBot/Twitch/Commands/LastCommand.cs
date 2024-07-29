@@ -39,6 +39,10 @@ public class LastCommand : BaseCommand
                 _ => "Непонятно."
             };
 
+            TimeSpan passed = (DateTime.UtcNow - recentOver.GameDate) + recentOver.DetailsInfo!.Duration;
+
+            reply += $" ({GetTimeString(passed)} назад)";
+
             await chatBot.Channel.SendMessageAsync(reply, e.id);
             return;
         }
