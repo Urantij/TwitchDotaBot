@@ -26,6 +26,8 @@ public class ChatBot : IHostedService
             new TwitchChatClientOpts(chatOptions.Value.Username, chatOptions.Value.Token), loggerFactory,
             applicationLifetime.ApplicationStopping);
 
+        Client.Connected += ClientOnConnected;
+        Client.ConnectionClosed += ClientOnConnectionClosed;
         Client.AuthFailed += AuthFailed;
 
         Channel = Client.AddAutoJoinChannel(appOptions.Value.TwitchUsername);
@@ -41,6 +43,16 @@ public class ChatBot : IHostedService
         Client.Close();
 
         return Task.CompletedTask;
+    }
+
+    private void ClientOnConnected()
+    {
+        _logger.LogInformation("Коннектед.");
+    }
+
+    private void ClientOnConnectionClosed(Exception? obj)
+    {
+        _logger.LogInformation("Дисконнектед.");
     }
 
     private void AuthFailed(object? sender, EventArgs e)
