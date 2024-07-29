@@ -39,7 +39,9 @@ public class DotaClient : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        return WorkLoopAsync(cancellationToken);
+        Task.Run(() => WorkLoopAsync(cancellationToken: cancellationToken), cancellationToken);
+
+        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
