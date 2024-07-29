@@ -140,6 +140,8 @@ public class Worker : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Запускается работник");
+        
         return Task.CompletedTask;
     }
 

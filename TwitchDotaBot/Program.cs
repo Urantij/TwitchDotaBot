@@ -9,6 +9,12 @@ public class Program
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
+        builder.Logging.ClearProviders();
+        builder.Logging.AddSimpleConsole(b =>
+        {
+            b.TimestampFormat = "[HH:mm:ss] ";
+        });
+
         builder.Services.AddOptions<AppConfig>()
             .Bind(builder.Configuration.GetSection("App"))
             .ValidateDataAnnotations()
