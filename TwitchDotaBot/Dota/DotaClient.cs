@@ -1,5 +1,4 @@
 using System.Collections.Specialized;
-using System.Net;
 using System.Net.Http.Json;
 using Dota2Dispenser.Shared.Consts;
 using Dota2Dispenser.Shared.Models;
@@ -71,7 +70,8 @@ public class DotaClient : IHostedService
             MatchModel[] models;
             try
             {
-                models = await LoadMatchesAsync(matchDbId, _appConfig.SteamId, cancellationToken);
+                models = await LoadMatchesAsync(matchDbId: matchDbId, steamId: _appConfig.SteamId,
+                    cancellationToken: cancellationToken);
             }
             catch (Exception e)
             {
@@ -113,7 +113,7 @@ public class DotaClient : IHostedService
                     continue;
 
                 _logger.LogInformation("Открываем матч {id}", freshModel.Id);
-                
+
                 CurrentMatch = freshModel;
                 NewMatchFound?.Invoke(CurrentMatch);
                 continue;
@@ -123,8 +123,9 @@ public class DotaClient : IHostedService
         }
     }
 
-    private async Task<MatchModel[]> LoadMatchesAsync(int? matchDbId, ulong? steamId,
-        CancellationToken cancellationToken)
+    public async Task<MatchModel[]> LoadMatchesAsync(int? matchDbId = null, ulong? steamId = null,
+        DateTimeOffset? afterDate = null, int? limit = null,
+        CancellationToken cancellationToken = default)
     {
         NameValueCollection query = System.Web.HttpUtility.ParseQueryString(string.Empty);
 
@@ -136,6 +137,16 @@ public class DotaClient : IHostedService
         if (steamId != null)
         {
             query[Dota2DispenserParams.steamIdFilter] = steamId.Value.ToString();
+        }
+
+        if (afterDate != null)
+        {
+            query[Dota2DispenserParams.afterDateTimeFilter] = afterDate.Value.ToUnixTimeSeconds().ToString();
+        }
+
+        if (limit != null)
+        {
+            query[Dota2DispenserParams.limitFilter] = limit.Value.ToString();
         }
 
         UriBuilder uriBuilder = new(new Uri(_dotaConfig.ServerAddress, Dota2DispenserPoints.matches));

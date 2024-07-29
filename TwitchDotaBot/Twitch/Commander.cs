@@ -1,33 +1,125 @@
+using TwitchDotaBot.Twitch.Commands;
 using TwitchSimpleLib.Chat.Messages;
 
 namespace TwitchDotaBot.Twitch;
 
 public class Commander : IHostedService
 {
-    private readonly ChatBot _chatBot;
-    private readonly ILogger<Commander> _logger;
+    private readonly BaseCommand[] _commands =
+    [
+        new StatCommand()
+        {
+            Triggers =
+            [
+                "победики",
+                "лузики"
+            ],
+            LiteralTriggers =
+            [
+                "!wl"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            ModsOnly = false
+        },
+        new LastCommand()
+        {
+            Triggers =
+            [
+                "ласт"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            ModsOnly = false
+        }
+    ];
 
-    public Commander(ChatBot chatBot, ILogger<Commander> logger)
+    private readonly ChatBot _chatBot;
+    private readonly IHostApplicationLifetime _lifetime;
+    private readonly ILogger<Commander> _logger;
+    private readonly IServiceScope _scope;
+
+    private const string Prefix = "=";
+
+    public Commander(ChatBot chatBot, IServiceScopeFactory scopeFactory, IHostApplicationLifetime lifetime,
+        ILogger<Commander> logger)
     {
         _chatBot = chatBot;
+        _lifetime = lifetime;
         _logger = logger;
+        _scope = scopeFactory.CreateScope();
     }
-    
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _chatBot.Channel.PrivateMessageReceived += ChannelOnPrivateMessageReceived;
-        
+
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _chatBot.Channel.PrivateMessageReceived -= ChannelOnPrivateMessageReceived;
-        
+
         return Task.CompletedTask;
     }
 
     private void ChannelOnPrivateMessageReceived(object? sender, TwitchPrivateMessage e)
     {
+        BaseCommand? targetCommand;
+
+        string[] args;
+        if (e.text.StartsWith(Prefix))
+        {
+            string[] split = e.text.Split(' ');
+
+            if (split.Length == 0)
+                return;
+
+            string command = split[0][Prefix.Length..].ToLower();
+            args = split.Skip(1).ToArray();
+
+            targetCommand = _commands.FirstOrDefault(c => c.Triggers.Contains(command));
+
+            if (targetCommand == null)
+                return;
+        }
+        else
+        {
+            string literalTrigger = e.text.Split(' ', 2)[0].ToLower();
+
+            targetCommand = _commands.FirstOrDefault(c => c.LiteralTriggers.Contains(literalTrigger));
+
+            if (targetCommand == null)
+                return;
+
+            args = e.text.Split(' ').Skip(1).ToArray();
+        }
+
+        bool isMod = e.mod || e.badges.ContainsKey("broadcaster");
+
+        if (targetCommand.ModsOnly && !isMod)
+            return;
+
+        if (!isMod)
+        {
+            TimeSpan? passed = DateTimeOffset.UtcNow - targetCommand.LastUse;
+
+            if (passed <= targetCommand.Cooldown)
+                return;
+        }
+
+        targetCommand.LastUse = DateTimeOffset.UtcNow;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                await targetCommand.DoAsync(_scope.ServiceProvider, args, e,
+                    cancellationToken: _lifetime.ApplicationStopping);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Ошибка при выполнении команды {command}", targetCommand.GetType().Name);
+            }
+        });
     }
 }

@@ -28,15 +28,18 @@ public class Program
             .Bind(builder.Configuration.GetSection("Dota"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        
+
         builder.Services.AddSingleton<SuperApi>();
 
         builder.Services.AddSingleton<ChatBot>();
         builder.Services.AddHostedService<ChatBot>(p => p.GetRequiredService<ChatBot>());
-        
+
         builder.Services.AddSingleton<DotaClient>();
         builder.Services.AddHostedService<DotaClient>(p => p.GetRequiredService<DotaClient>());
-        
+
+        builder.Services.AddSingleton<Commander>();
+        builder.Services.AddHostedService<Commander>(p => p.GetRequiredService<Commander>());
+
         builder.Services.AddSingleton<Worker>();
         builder.Services.AddHostedService<Worker>(p => p.GetRequiredService<Worker>());
 
