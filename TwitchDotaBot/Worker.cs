@@ -37,6 +37,9 @@ public class Worker : IHostedService
 
     private void DotaOnNewMatchFound(MatchModel obj)
     {
+        if (_prediction != null && _trackingMatch?.MatchResult == MatchResult.None)
+            return;
+        
         _trackingMatch = obj;
 
         Task.Run(async () =>
@@ -98,10 +101,22 @@ public class Worker : IHostedService
 
         TwitchAPI api = await _api.GetApiAsync();
 
+        string title;
+        
+        TimeSpan? passed = DateTime.UtcNow - _trackingMatch?.GameDate;
+        if (passed > TimeSpan.FromMinutes(5))
+        {
+            title = $"Победа в игре дота2? ({passed.Value.TotalMinutes:F0} минут назад)";
+        }
+        else
+        {
+            title = "Победа в игре дота2?";
+        }
+        
         CreatePredictionResponse? response = await api.Helix.Predictions.CreatePredictionAsync(
             new CreatePredictionRequest()
             {
-                BroadcasterId = _appConfig.TwitchId, Title = "Победа в игре дота2?", PredictionWindowSeconds = 150,
+                BroadcasterId = _appConfig.TwitchId, Title = title, PredictionWindowSeconds = 150,
                 Outcomes = [new Outcome { Title = "Да" }, new Outcome { Title = "Нет" }]
             });
 
