@@ -63,6 +63,8 @@ public class Worker : IHostedService
         if (_prediction == null)
             return;
 
+        _trackingMatch = obj;
+
         bool? win;
         if (obj.MatchResult == MatchResult.Finished)
         {
