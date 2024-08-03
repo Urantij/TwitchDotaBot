@@ -29,6 +29,20 @@ public class Commander : IHostedService
             ],
             Cooldown = TimeSpan.FromSeconds(30),
             ModsOnly = false
+        },
+        new AverageCommand()
+        {
+            Triggers =
+            [
+                "авг",
+                "аверага"
+            ],
+            LiteralTriggers =
+            [
+                "!avg"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            ModsOnly = false
         }
     ];
 
