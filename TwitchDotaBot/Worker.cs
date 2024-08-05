@@ -39,7 +39,7 @@ public class Worker : IHostedService
     {
         if (_prediction != null && _trackingMatch?.MatchResult == MatchResult.None)
             return;
-        
+
         _trackingMatch = obj;
 
         Task.Run(async () =>
@@ -104,7 +104,7 @@ public class Worker : IHostedService
         TwitchAPI api = await _api.GetApiAsync();
 
         string title;
-        
+
         TimeSpan? passed = DateTime.UtcNow - _trackingMatch?.GameDate;
         if (passed > TimeSpan.FromMinutes(5))
         {
@@ -114,11 +114,12 @@ public class Worker : IHostedService
         {
             title = "Победа в игре дота2?";
         }
-        
+
         CreatePredictionResponse? response = await api.Helix.Predictions.CreatePredictionAsync(
             new CreatePredictionRequest()
             {
-                BroadcasterId = _appConfig.TwitchId, Title = title, PredictionWindowSeconds = 150,
+                BroadcasterId = _appConfig.TwitchId, Title = title,
+                PredictionWindowSeconds = _appConfig.PredictionTimeWindow,
                 Outcomes = [new Outcome { Title = "Да" }, new Outcome { Title = "Нет" }]
             });
 
@@ -158,7 +159,7 @@ public class Worker : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Запускается работник");
-        
+
         return Task.CompletedTask;
     }
 
