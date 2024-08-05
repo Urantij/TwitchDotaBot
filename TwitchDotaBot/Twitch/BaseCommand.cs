@@ -12,6 +12,7 @@ public abstract class BaseCommand
     public required TimeSpan Cooldown { get; init; }
 
     public bool ModsOnly { get; init; } = true;
+    public bool MainVillainOnly { get; init; } = false;
 
     public DateTimeOffset? LastUse { get; set; } = null;
 

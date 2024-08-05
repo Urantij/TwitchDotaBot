@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using TwitchDotaBot.Twitch.Commands;
 using TwitchSimpleLib.Chat.Messages;
 
@@ -43,20 +44,32 @@ public class Commander : IHostedService
             ],
             Cooldown = TimeSpan.FromSeconds(30),
             ModsOnly = false
+        },
+        new CancelPredictionCommand()
+        {
+            Triggers =
+            [
+                "отмена"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            MainVillainOnly = true
         }
     ];
 
     private readonly ChatBot _chatBot;
+    private readonly AppConfig _config;
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<Commander> _logger;
     private readonly IServiceScope _scope;
 
     private const string Prefix = "=";
 
-    public Commander(ChatBot chatBot, IServiceScopeFactory scopeFactory, IHostApplicationLifetime lifetime,
+    public Commander(ChatBot chatBot, IServiceScopeFactory scopeFactory, IOptions<AppConfig> options,
+        IHostApplicationLifetime lifetime,
         ILogger<Commander> logger)
     {
         _chatBot = chatBot;
+        _config = options.Value;
         _lifetime = lifetime;
         _logger = logger;
         _scope = scopeFactory.CreateScope();
@@ -109,11 +122,17 @@ public class Commander : IHostedService
         }
 
         bool isMod = e.mod || e.badges.ContainsKey("broadcaster");
+        bool isMainVillain = e.username.Equals(_config.MainVillainName, StringComparison.OrdinalIgnoreCase);
 
-        if (targetCommand.ModsOnly && !isMod)
+        if (targetCommand.MainVillainOnly)
+        {
+            if (!isMainVillain)
+                return;
+        }
+        else if (targetCommand.ModsOnly && !isMod)
             return;
 
-        if (!isMod)
+        if (!isMod && !isMainVillain)
         {
             TimeSpan? passed = DateTimeOffset.UtcNow - targetCommand.LastUse;
 

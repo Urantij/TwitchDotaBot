@@ -19,8 +19,8 @@ public class Worker : IHostedService
     private readonly AppConfig _appConfig;
     private readonly ILogger<Worker> _logger;
 
-    private MatchModel? _trackingMatch;
-    private Prediction? _prediction;
+    public MatchModel? CurrentMatch { get; private set; }
+    public Prediction? CurrentPrediction { get; private set; }
 
     public Worker(DotaClient dota, ChatBot chatBot, SuperApi api, IOptions<AppConfig> appOptions,
         ILogger<Worker> logger)
@@ -37,10 +37,10 @@ public class Worker : IHostedService
 
     private void DotaOnNewMatchFound(MatchModel obj)
     {
-        if (_prediction != null && _trackingMatch?.MatchResult == MatchResult.None)
+        if (CurrentPrediction != null && CurrentMatch?.MatchResult == MatchResult.None)
             return;
 
-        _trackingMatch = obj;
+        CurrentMatch = obj;
 
         Task.Run(async () =>
         {
@@ -57,13 +57,13 @@ public class Worker : IHostedService
 
     private void DotaOnMatchClosed(MatchModel obj)
     {
-        if (obj.Id != _trackingMatch?.Id)
+        if (obj.Id != CurrentMatch?.Id)
             return;
 
-        if (_prediction == null)
+        if (CurrentPrediction == null)
             return;
 
-        _trackingMatch = obj;
+        CurrentMatch = obj;
 
         bool? win;
         if (obj.MatchResult == MatchResult.Finished)
@@ -88,7 +88,7 @@ public class Worker : IHostedService
         {
             try
             {
-                await ClosePredictionAsync(win, _prediction);
+                await ClosePredictionAsync(win, CurrentPrediction);
             }
             catch (Exception e)
             {
@@ -97,7 +97,7 @@ public class Worker : IHostedService
         });
     }
 
-    private async Task StartPredictionAsync()
+    public async Task StartPredictionAsync()
     {
         _logger.LogInformation("Запускаем ставку.");
 
@@ -105,7 +105,7 @@ public class Worker : IHostedService
 
         string title;
 
-        TimeSpan? passed = DateTime.UtcNow - _trackingMatch?.GameDate;
+        TimeSpan? passed = DateTime.UtcNow - CurrentMatch?.GameDate;
         if (passed > TimeSpan.FromMinutes(5))
         {
             title = $"Победа в игре дота2? ({passed.Value.TotalMinutes:F0} минут назад)";
@@ -123,12 +123,12 @@ public class Worker : IHostedService
                 Outcomes = [new Outcome { Title = "Да" }, new Outcome { Title = "Нет" }]
             });
 
-        _prediction = response.Data[0];
+        CurrentPrediction = response.Data[0];
 
         await _chatBot.Channel.SendMessageAsync("Запустил ставку.");
     }
 
-    private async Task ClosePredictionAsync(bool? win, Prediction prediction)
+    public async Task ClosePredictionAsync(bool? win, Prediction prediction)
     {
         _logger.LogInformation("Закрываем ставку.");
 
