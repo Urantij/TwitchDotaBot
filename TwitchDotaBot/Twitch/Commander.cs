@@ -53,6 +53,15 @@ public class Commander : IHostedService
             ],
             Cooldown = TimeSpan.FromSeconds(30),
             MainVillainOnly = true
+        },
+        new CancelPredictionExtremeCommand()
+        {
+            Triggers =
+            [
+                "суперотмена"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            MainVillainOnly = true
         }
     ];
 
