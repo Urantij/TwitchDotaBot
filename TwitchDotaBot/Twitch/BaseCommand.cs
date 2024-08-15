@@ -19,12 +19,18 @@ public abstract class BaseCommand
     public abstract Task DoAsync(IServiceProvider provider, string[] args, TwitchPrivateMessage e,
         CancellationToken cancellationToken = default);
 
+    // Кто-то скажет, нужно делать хелпер. Я скажу, что никто не скажет, я один тут.
+    public static PlayerModel? GetPlayer(MatchModel match, ulong id)
+    {
+        return match.Players?.FirstOrDefault(p => p.SteamId == id);
+    }
+
     public static bool? IsWinner(MatchModel match, ulong id)
     {
         if (match.MatchResult != MatchResult.Finished || match.DetailsInfo?.RadiantWin == null)
             return null;
 
-        PlayerModel? target = match.Players?.FirstOrDefault(p => p.SteamId == id);
+        PlayerModel? target = GetPlayer(match, id);
         if (target?.TeamNumber == null)
             return null;
 
