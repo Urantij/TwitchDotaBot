@@ -24,6 +24,7 @@ public class DotaClient : IHostedService
     public MatchModel? CurrentMatch { get; private set; }
 
     public event Action<MatchModel>? NewMatchFound;
+    public event Action<MatchModel>? MatchUpdated;
     public event Action<MatchModel>? MatchClosed;
 
     public DotaClient(IOptions<DotaConfig> dotaOptions, IOptions<AppConfig> appOptions,
@@ -102,6 +103,10 @@ public class DotaClient : IHostedService
                 {
                     _logger.LogInformation("Закрываем матч {id}", CurrentMatch.Id);
                     MatchClosed?.Invoke(CurrentMatch);
+                }
+                else
+                {
+                    MatchUpdated?.Invoke(CurrentMatch);
                 }
 
                 continue;
