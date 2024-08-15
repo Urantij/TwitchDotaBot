@@ -28,6 +28,10 @@ public class Program
             .Bind(builder.Configuration.GetSection("Dota"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        builder.Services.AddOptions<MedusaShameConfig>()
+            .Bind(builder.Configuration.GetSection("Shame"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         builder.Services.AddSingleton<SuperApi>();
 
@@ -42,6 +46,9 @@ public class Program
 
         builder.Services.AddSingleton<Worker>();
         builder.Services.AddHostedService<Worker>(p => p.GetRequiredService<Worker>());
+
+        builder.Services.AddSingleton<MedusaShame>();
+        builder.Services.AddHostedService<MedusaShame>(p => p.GetRequiredService<MedusaShame>());
 
         IHost host = builder.Build();
 
