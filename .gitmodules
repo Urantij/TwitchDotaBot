@@ -1,0 +1,4 @@
+[submodule "TwitchLib.Api"]
+	path = TwitchLib.Api
+	url = https://github.com/Urantij/TwitchLib.Api.git
+	branch = sg

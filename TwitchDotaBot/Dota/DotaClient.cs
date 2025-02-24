@@ -1,10 +1,17 @@
 using System.Collections.Specialized;
-using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dota2Dispenser.Shared.Consts;
 using Dota2Dispenser.Shared.Models;
 using Microsoft.Extensions.Options;
 
 namespace TwitchDotaBot.Dota;
+
+[JsonSerializable(typeof(MatchModel))]
+internal partial class DotaSerializeContext : JsonSerializerContext
+{
+            
+}
 
 public class DotaConfig
 {
@@ -164,10 +171,9 @@ public class DotaClient : IHostedService
 
         response.EnsureSuccessStatusCode();
 
-        MatchModel[]? matches =
-            await response.Content.ReadFromJsonAsync<MatchModel[]>(cancellationToken: cancellationToken);
+        string content = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        if (matches == null)
+        if (JsonSerializer.Deserialize(content, typeof(MatchModel[]), DotaSerializeContext.Default) is not MatchModel[] matches)
         {
             throw new NullReferenceException($"{nameof(matches)} is null");
         }

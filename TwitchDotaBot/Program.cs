@@ -11,27 +11,17 @@ public class Program
 
         builder.Logging.ClearProviders();
         builder.Logging.AddSimpleConsole(b => { b.TimestampFormat = "[HH:mm:ss] "; });
-
-        builder.Services.AddOptions<AppConfig>()
-            .Bind(builder.Configuration.GetSection("App"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        builder.Services.AddOptions<TwitchApiConfig>()
-            .Bind(builder.Configuration.GetSection("TwitchApi"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        builder.Services.AddOptions<ChatBotConfig>()
-            .Bind(builder.Configuration.GetSection("TwitchChat"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        builder.Services.AddOptions<DotaConfig>()
-            .Bind(builder.Configuration.GetSection("Dota"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        builder.Services.AddOptions<MedusaShameConfig>()
-            .Bind(builder.Configuration.GetSection("Shame"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        
+        // https://github.com/dotnet/runtime/issues/95006
+        {
+            CancerConfigLoader bind = CancerConfigLoader.Load();
+            
+            builder.Services.AddCancerOptions<AppConfig>("App", bind);
+            builder.Services.AddCancerOptions<TwitchApiConfig>("TwitchApi", bind);
+            builder.Services.AddCancerOptions<ChatBotConfig>("TwitchChat", bind);
+            builder.Services.AddCancerOptions<DotaConfig>("Dota", bind);
+            builder.Services.AddCancerOptions<MedusaShameConfig>("Shame", bind);
+        }
 
         builder.Services.AddSingleton<SuperApi>();
 
