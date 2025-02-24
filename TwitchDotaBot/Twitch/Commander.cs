@@ -52,7 +52,7 @@ public class Commander : IHostedService
                 "отмена"
             ],
             Cooldown = TimeSpan.FromSeconds(30),
-            MainVillainOnly = true
+            // MainVillainOnly = true
         },
         new CancelPredictionExtremeCommand()
         {
@@ -62,6 +62,24 @@ public class Commander : IHostedService
             ],
             Cooldown = TimeSpan.FromSeconds(30),
             MainVillainOnly = true
+        },
+        new TestPredictionCommand()
+        {
+            Triggers =
+            [
+                "тестпрогноз"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            MainVillainOnly = true
+        },
+        new ClosePredictionCommand()
+        {
+            Triggers =
+            [
+                "закрыть"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
+            // MainVillainOnly = true
         }
     ];
 
