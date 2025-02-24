@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 namespace TwitchDotaBot.Dota;
 
 [JsonSerializable(typeof(MatchModel))]
+[JsonSerializable(typeof(MatchModel[]))]
 internal partial class DotaSerializeContext : JsonSerializerContext
 {
-            
 }
 
 public class DotaConfig
@@ -173,7 +173,8 @@ public class DotaClient : IHostedService
 
         string content = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        if (JsonSerializer.Deserialize(content, typeof(MatchModel[]), DotaSerializeContext.Default) is not MatchModel[] matches)
+        if (JsonSerializer.Deserialize(content, typeof(MatchModel[]), DotaSerializeContext.Default) is not MatchModel[]
+            matches)
         {
             throw new NullReferenceException($"{nameof(matches)} is null");
         }
