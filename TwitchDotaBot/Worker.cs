@@ -48,6 +48,19 @@ public class Worker : IHostedService
             {
                 await StartPredictionAsync();
             }
+            catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
+            {
+                try
+                {
+                    string message = await e.HttpResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogError("Ошибка при попытке запустить ставку. {message}", message);
+                }
+                catch
+                {
+                    _logger.LogError(e, "Ошибка при попытке запустить ставку. Сообщение не удалось загрузить.");
+                }
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, "Ошибка при попытке запустить ставку.");
@@ -90,6 +103,19 @@ public class Worker : IHostedService
             {
                 await ClosePredictionAsync(win, CurrentPrediction);
             }
+            catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
+            {
+                try
+                {
+                    string message = await e.HttpResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogError("Ошибка при попытке закрыть ставку. {message}", message);
+                }
+                catch
+                {
+                    _logger.LogError(e, "Ошибка при попытке закрыть ставку. Сообщение не удалось загрузить.");
+                }
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, "Ошибка при попытке закрыть ставку.");
@@ -126,6 +152,8 @@ public class Worker : IHostedService
         CurrentPrediction = response.Data[0];
 
         await _chatBot.Channel.SendMessageAsync("Запустил ставку.");
+
+        _logger.LogInformation("Запустил ставку {id}", CurrentPrediction.Id);
     }
 
     public async Task ClosePredictionAsync(bool? win, Prediction prediction)
@@ -154,6 +182,8 @@ public class Worker : IHostedService
             PredictionEndStatus.RESOLVED, targetOutcome.Id);
 
         await _chatBot.Channel.SendMessageAsync("Закрыл ставку.");
+
+        _logger.LogInformation("Закрыл ставку {id}", prediction.Id);
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
