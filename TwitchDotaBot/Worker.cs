@@ -141,7 +141,7 @@ public class Worker : IHostedService
             title = "Победа в игре дота2?";
         }
 
-        CreatePredictionResponse? response = await api.Helix.Predictions.CreatePredictionAsync(
+        CreatePredictionResponse response = await api.Helix.Predictions.CreatePredictionAsync(
             new CreatePredictionRequest()
             {
                 BroadcasterId = _appConfig.TwitchId, Title = title,
@@ -158,7 +158,7 @@ public class Worker : IHostedService
 
     public async Task ClosePredictionAsync(bool? win, Prediction prediction)
     {
-        _logger.LogInformation("Закрываем ставку.");
+        _logger.LogInformation("Закрываем ставку. {id}", prediction.Id);
 
         TwitchAPI api = await _api.GetApiAsync();
 
@@ -168,6 +168,8 @@ public class Worker : IHostedService
                 PredictionEndStatus.CANCELED);
 
             await _chatBot.Channel.SendMessageAsync("Отменил ставку.");
+            
+            _logger.LogInformation("Отменил ставку {id}", prediction.Id);
             return;
         }
 
