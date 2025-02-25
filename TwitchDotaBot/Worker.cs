@@ -97,6 +97,8 @@ public class Worker : IHostedService
             win = null;
         }
 
+        Prediction thatPrediction = CurrentPrediction;
+        MatchModel thatMatch = CurrentMatch;
         Task.Run(async () =>
         {
             try
@@ -110,6 +112,11 @@ public class Worker : IHostedService
                     string message = await e.HttpResponse.Content.ReadAsStringAsync();
 
                     _logger.LogError("Ошибка при попытке закрыть ставку. {message}", message);
+
+                    // if (message.Contains("prediction event has already ended"))
+                    // {
+                    //     await _chatBot.Channel.SendMessageAsync("Не удалось закрыть прогноз - он уже завершён.");
+                    // }
                 }
                 catch
                 {
@@ -120,6 +127,11 @@ public class Worker : IHostedService
             {
                 _logger.LogError(e, "Ошибка при попытке закрыть ставку.");
             }
+
+            if (thatMatch == CurrentMatch)
+                CurrentMatch = null;
+            if (thatPrediction == CurrentPrediction)
+                CurrentPrediction = null;
         });
     }
 
@@ -168,7 +180,7 @@ public class Worker : IHostedService
                 PredictionEndStatus.CANCELED);
 
             await _chatBot.Channel.SendMessageAsync("Отменил ставку.");
-            
+
             _logger.LogInformation("Отменил ставку {id}", prediction.Id);
             return;
         }
