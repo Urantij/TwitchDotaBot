@@ -128,10 +128,7 @@ public class Worker : IHostedService
                 _logger.LogError(e, "Ошибка при попытке закрыть ставку.");
             }
 
-            if (thatMatch == CurrentMatch)
-                CurrentMatch = null;
-            if (thatPrediction == CurrentPrediction)
-                CurrentPrediction = null;
+            Clear(thatMatch, thatPrediction);
         });
     }
 
@@ -213,5 +210,19 @@ public class Worker : IHostedService
         _dota.MatchClosed -= DotaOnMatchClosed;
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Убрать из воркера текущие <see cref="Prediction"/> и <see cref="MatchModel"/>, если они совпадают с аргументами
+    /// </summary>
+    /// <param name="currentMatch"></param>
+    /// <param name="currentPrediction"></param>
+    public void Clear(MatchModel? currentMatch = null, Prediction? currentPrediction = null)
+    {
+        if ((currentPrediction == null || currentPrediction != CurrentPrediction) &&
+            (currentMatch == null || currentMatch != CurrentMatch)) return;
+
+        CurrentPrediction = null;
+        CurrentMatch = null;
     }
 }

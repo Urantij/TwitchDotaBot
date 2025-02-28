@@ -1,4 +1,5 @@
 using TwitchLib.Api.Core.Enums;
+using TwitchLib.Api.Helix.Models.Predictions;
 using TwitchSimpleLib.Chat.Messages;
 
 namespace TwitchDotaBot.Twitch.Commands;
@@ -10,14 +11,16 @@ public class ClosePredictionCommand : BaseCommand
     {
         var worker = provider.GetRequiredService<Worker>();
         var chatbot = provider.GetRequiredService<ChatBot>();
+        
+        Prediction? currentPrediction = worker.CurrentPrediction;
 
-        if (worker.CurrentPrediction == null)
+        if (currentPrediction == null)
         {
             await chatbot.Channel.SendMessageAsync("Не вижу предикт.", e.id);
             return;
         }
         
-        if (worker.CurrentPrediction.Status is PredictionStatus.CANCELED or PredictionStatus.RESOLVED)
+        if (currentPrediction.Status is PredictionStatus.CANCELED or PredictionStatus.RESOLVED)
         {
             await chatbot.Channel.SendMessageAsync("Предикт уже закончен.", e.id);
             return;
@@ -49,7 +52,10 @@ public class ClosePredictionCommand : BaseCommand
             return;
         }
 
-        await worker.ClosePredictionAsync(result, worker.CurrentPrediction);
+        await worker.ClosePredictionAsync(result, currentPrediction);
         await chatbot.Channel.SendMessageAsync("Сделана.", e.id);
+        
+        // Как будто бы это нужно вынести в сам воркер. Но это нужно отдельный метод делать, а это кабутабы впадлу
+        worker.Clear(currentPrediction: currentPrediction);
     }
 }
