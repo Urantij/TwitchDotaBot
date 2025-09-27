@@ -80,6 +80,16 @@ public class Commander : IHostedService
             ],
             Cooldown = TimeSpan.FromSeconds(30),
             // MainVillainOnly = true
+        },
+        new PrevPlayersCommand()
+        {
+            Triggers =
+            [
+                "стримснайперы",
+                "ласты",
+                "прошлые"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30),
         }
     ];
 

@@ -11,14 +11,15 @@ public class Program
 
         builder.Logging.ClearProviders();
         builder.Logging.AddSimpleConsole(b => { b.TimestampFormat = "[HH:mm:ss] "; });
-        
+
         // https://github.com/dotnet/runtime/issues/95006
         {
             CancerConfigLoader bind = CancerConfigLoader.Load();
-            
+
             builder.Services.AddCancerOptions<AppConfig>("App", bind);
             builder.Services.AddCancerOptions<TwitchApiConfig>("TwitchApi", bind);
             builder.Services.AddCancerOptions<ChatBotConfig>("TwitchChat", bind);
+            builder.Services.AddCancerOptions<DotaHeroesConfig>("DotaHeroes", bind);
             builder.Services.AddCancerOptions<DotaConfig>("Dota", bind);
             builder.Services.AddCancerOptions<MedusaShameConfig>("Shame", bind);
         }
@@ -27,6 +28,9 @@ public class Program
 
         builder.Services.AddSingleton<ChatBot>();
         builder.Services.AddHostedService<ChatBot>(p => p.GetRequiredService<ChatBot>());
+
+        builder.Services.AddSingleton<DotaHeroes>();
+        builder.Services.AddHostedService<DotaHeroes>(p => p.GetRequiredService<DotaHeroes>());
 
         builder.Services.AddSingleton<DotaClient>();
         builder.Services.AddHostedService<DotaClient>(p => p.GetRequiredService<DotaClient>());
