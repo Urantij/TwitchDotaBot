@@ -2,3 +2,7 @@
 	path = TwitchLib.Api
 	url = https://github.com/Urantij/TwitchLib.Api.git
 	branch = sg
+[submodule "Dota2Dispenser.Shared"]
+	path = Dota2Dispenser.Shared
+	url = https://github.com/Urantij/Dota2Dispenser.Shared.git
+	branch = steamkit3
