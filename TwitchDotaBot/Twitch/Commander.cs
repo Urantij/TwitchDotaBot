@@ -87,6 +87,7 @@ public class Commander : IHostedService
             [
                 "стримснайперы",
                 "ласты",
+                "ластики",
                 "прошлые"
             ],
             Cooldown = TimeSpan.FromSeconds(30),
