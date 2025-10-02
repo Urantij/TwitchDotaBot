@@ -103,7 +103,7 @@ public class Worker : IHostedService
         {
             try
             {
-                await ClosePredictionAsync(win, CurrentPrediction);
+                await ClosePredictionAsync(win, thatPrediction);
             }
             catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
             {
@@ -128,7 +128,8 @@ public class Worker : IHostedService
                 _logger.LogError(e, "Ошибка при попытке закрыть ставку.");
             }
 
-            Clear(thatMatch, thatPrediction);
+            if (thatPrediction == CurrentPrediction)
+                CurrentPrediction = null;
         });
     }
 
@@ -178,6 +179,7 @@ public class Worker : IHostedService
 
             await _chatBot.Channel.SendMessageAsync("Отменил ставку.");
 
+            CurrentPrediction = null;
             _logger.LogInformation("Отменил ставку {id}", prediction.Id);
             return;
         }
@@ -191,6 +193,8 @@ public class Worker : IHostedService
 
         await api.Helix.Predictions.EndPredictionAsync(_appConfig.TwitchId, prediction.Id,
             PredictionEndStatus.RESOLVED, targetOutcome.Id);
+
+        CurrentPrediction = null;
 
         await _chatBot.Channel.SendMessageAsync("Закрыл ставку.");
 

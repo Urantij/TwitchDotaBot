@@ -54,8 +54,5 @@ public class ClosePredictionCommand : BaseCommand
 
         await worker.ClosePredictionAsync(result, currentPrediction);
         await chatbot.Channel.SendMessageAsync("Сделана.", e.id);
-        
-        // Как будто бы это нужно вынести в сам воркер. Но это нужно отдельный метод делать, а это кабутабы впадлу
-        worker.Clear(currentPrediction: currentPrediction);
     }
 }
