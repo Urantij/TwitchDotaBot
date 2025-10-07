@@ -48,6 +48,19 @@ public class Worker : IHostedService
             {
                 await StartPredictionAsync();
             }
+            catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
+            {
+                try
+                {
+                    string message = await e.HttpResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogError("Ошибка при попытке запустить ставку. {message}", message);
+                }
+                catch
+                {
+                    _logger.LogError(e, "Ошибка при попытке запустить ставку. Сообщение не удалось загрузить.");
+                }
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, "Ошибка при попытке запустить ставку.");
@@ -84,16 +97,39 @@ public class Worker : IHostedService
             win = null;
         }
 
+        Prediction thatPrediction = CurrentPrediction;
+        MatchModel thatMatch = CurrentMatch;
         Task.Run(async () =>
         {
             try
             {
-                await ClosePredictionAsync(win, CurrentPrediction);
+                await ClosePredictionAsync(win, thatPrediction);
+            }
+            catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
+            {
+                try
+                {
+                    string message = await e.HttpResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogError("Ошибка при попытке закрыть ставку. {message}", message);
+
+                    // if (message.Contains("prediction event has already ended"))
+                    // {
+                    //     await _chatBot.Channel.SendMessageAsync("Не удалось закрыть прогноз - он уже завершён.");
+                    // }
+                }
+                catch
+                {
+                    _logger.LogError(e, "Ошибка при попытке закрыть ставку. Сообщение не удалось загрузить.");
+                }
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Ошибка при попытке закрыть ставку.");
             }
+
+            if (thatPrediction == CurrentPrediction)
+                CurrentPrediction = null;
         });
     }
 
@@ -115,7 +151,7 @@ public class Worker : IHostedService
             title = "Победа в игре дота2?";
         }
 
-        CreatePredictionResponse? response = await api.Helix.Predictions.CreatePredictionAsync(
+        CreatePredictionResponse response = await api.Helix.Predictions.CreatePredictionAsync(
             new CreatePredictionRequest()
             {
                 BroadcasterId = _appConfig.TwitchId, Title = title,
@@ -126,11 +162,13 @@ public class Worker : IHostedService
         CurrentPrediction = response.Data[0];
 
         await _chatBot.Channel.SendMessageAsync("Запустил ставку.");
+
+        _logger.LogInformation("Запустил ставку {id}", CurrentPrediction.Id);
     }
 
     public async Task ClosePredictionAsync(bool? win, Prediction prediction)
     {
-        _logger.LogInformation("Закрываем ставку.");
+        _logger.LogInformation("Закрываем ставку. {id}", prediction.Id);
 
         TwitchAPI api = await _api.GetApiAsync();
 
@@ -140,6 +178,9 @@ public class Worker : IHostedService
                 PredictionEndStatus.CANCELED);
 
             await _chatBot.Channel.SendMessageAsync("Отменил ставку.");
+
+            CurrentPrediction = null;
+            _logger.LogInformation("Отменил ставку {id}", prediction.Id);
             return;
         }
 
@@ -153,7 +194,11 @@ public class Worker : IHostedService
         await api.Helix.Predictions.EndPredictionAsync(_appConfig.TwitchId, prediction.Id,
             PredictionEndStatus.RESOLVED, targetOutcome.Id);
 
+        CurrentPrediction = null;
+
         await _chatBot.Channel.SendMessageAsync("Закрыл ставку.");
+
+        _logger.LogInformation("Закрыл ставку {id}", prediction.Id);
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -169,5 +214,19 @@ public class Worker : IHostedService
         _dota.MatchClosed -= DotaOnMatchClosed;
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Убрать из воркера текущие <see cref="Prediction"/> и <see cref="MatchModel"/>, если они совпадают с аргументами
+    /// </summary>
+    /// <param name="currentMatch"></param>
+    /// <param name="currentPrediction"></param>
+    public void Clear(MatchModel? currentMatch = null, Prediction? currentPrediction = null)
+    {
+        if ((currentPrediction == null || currentPrediction != CurrentPrediction) &&
+            (currentMatch == null || currentMatch != CurrentMatch)) return;
+
+        CurrentPrediction = null;
+        CurrentMatch = null;
     }
 }
