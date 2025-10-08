@@ -1,5 +1,6 @@
 using Dota2Dispenser.Shared.Consts;
 using Dota2Dispenser.Shared.Models;
+using Microsoft.Extensions.Options;
 using TwitchDotaBot.Dota;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Predictions;
@@ -16,6 +17,8 @@ public class CreateMatchPredictionCommand : BaseCommand
         var worker = provider.GetRequiredService<Worker>();
         var chatbot = provider.GetRequiredService<ChatBot>();
         var logger = provider.GetRequiredService<ILogger<CreateMatchPredictionCommand>>();
+        var config = provider.GetRequiredService<IOptions<AppConfig>>();
+        var heroes = provider.GetRequiredService<DotaHeroes>();
 
         Prediction? currentPrediction = worker.CurrentPrediction;
 
@@ -56,6 +59,23 @@ public class CreateMatchPredictionCommand : BaseCommand
         // там внутри пишет.. нужно всё разделять
         TimeSpan passed = (DateTime.UtcNow - match.GameDate) + match.DetailsInfo?.Duration ?? TimeSpan.Zero;
 
-        await chatbot.Channel.SendMessageAsync("Матч ({GetTimeString(passed)} назад)", e.id);
+        int? heroId = match.Players?.FirstOrDefault(p => p.SteamId == config.Value.SteamId)?.HeroId;
+
+        string heroString = "";
+        if (heroId != null)
+        {
+            HeroModel? model = heroes.FindHero(heroId.Value);
+
+            if (model != null)
+            {
+                heroString = $" ({model.Name})";
+            }
+            else
+            {
+                heroString = " (Пока без героя)";
+            }
+        }
+
+        await chatbot.Channel.SendMessageAsync($"Матч найден {GetTimeString(passed)} назад{heroString}", e.id);
     }
 }
