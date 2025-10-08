@@ -37,19 +37,24 @@ public class Worker : IHostedService
 
     private void DotaOnNewMatchFound(MatchModel obj)
     {
-        if (CurrentPrediction != null && CurrentMatch?.MatchResult == MatchResult.None)
-            return;
-
-        CurrentMatch = obj;
-
         Task.Run(async () =>
         {
+            if (CurrentPrediction != null && CurrentMatch?.MatchResult == MatchResult.None)
+            {
+                await _chatBot.Channel.SendMessageAsync($"Найден новый матч, но прогноз уже существует.");
+                return;
+            }
+
+            CurrentMatch = obj;
+
             try
             {
                 await StartPredictionAsync();
             }
             catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
             {
+                await _chatBot.Channel.SendMessageAsync($"Найден новый матч, но не удалось создать прогноз на него.");
+
                 try
                 {
                     string message = await e.HttpResponse.Content.ReadAsStringAsync();
@@ -63,6 +68,8 @@ public class Worker : IHostedService
             }
             catch (Exception e)
             {
+                await _chatBot.Channel.SendMessageAsync($"Найден новый матч, но не удалось создать прогноз на него.");
+
                 _logger.LogError(e, "Ошибка при попытке запустить ставку.");
             }
         });
@@ -216,19 +223,5 @@ public class Worker : IHostedService
         _dota.MatchClosed -= DotaOnMatchClosed;
 
         return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Убрать из воркера текущие <see cref="Prediction"/> и <see cref="MatchModel"/>, если они совпадают с аргументами
-    /// </summary>
-    /// <param name="currentMatch"></param>
-    /// <param name="currentPrediction"></param>
-    public void Clear(MatchModel? currentMatch = null, Prediction? currentPrediction = null)
-    {
-        if ((currentPrediction == null || currentPrediction != CurrentPrediction) &&
-            (currentMatch == null || currentMatch != CurrentMatch)) return;
-
-        CurrentPrediction = null;
-        CurrentMatch = null;
     }
 }
