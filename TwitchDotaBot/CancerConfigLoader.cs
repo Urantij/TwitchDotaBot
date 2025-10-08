@@ -14,6 +14,7 @@ namespace TwitchDotaBot;
 [JsonSerializable(typeof(ChatBotConfig))]
 [JsonSerializable(typeof(DotaConfig))]
 [JsonSerializable(typeof(MedusaShameConfig))]
+[JsonSerializable(typeof(DotaHeroesConfig))]
 public partial class ConfigSerializerContext : JsonSerializerContext
 {
 }

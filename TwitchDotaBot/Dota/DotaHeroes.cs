@@ -4,6 +4,11 @@ using Microsoft.Extensions.Options;
 
 namespace TwitchDotaBot.Dota;
 
+[JsonSerializable(typeof(HeroModel[]))]
+public partial class HeroesSerializerContext : JsonSerializerContext
+{
+}
+
 public class HeroModel
 {
     [JsonPropertyName("id")] public int Id { get; }
@@ -72,6 +77,9 @@ public class DotaHeroes : IHostedService
     {
         string content = await File.ReadAllTextAsync(_config.FilePath);
 
-        return JsonSerializer.Deserialize<HeroModel[]>(content)!;
+        return JsonSerializer.Deserialize<HeroModel[]>(content, new JsonSerializerOptions()
+        {
+            TypeInfoResolver = HeroesSerializerContext.Default
+        })!;
     }
 }
