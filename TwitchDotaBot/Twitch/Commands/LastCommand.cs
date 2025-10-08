@@ -39,7 +39,8 @@ public class LastCommand : BaseCommand
                 _ => "Непонятно."
             };
 
-            TimeSpan passed = (DateTime.UtcNow - recentOver.GameDate) + recentOver.DetailsInfo!.Duration;
+            TimeSpan passed = (DateTime.UtcNow - recentOver.GameDate) + recentOver.DetailsInfo?.Duration ??
+                              TimeSpan.Zero;
 
             reply += $" ({GetTimeString(passed)} назад)";
 

@@ -52,7 +52,10 @@ public class CreateMatchPredictionCommand : BaseCommand
                 "Не удалось создать прогноз. Не пробуй юзать команду ещё раз, там чето совсем неправильно.", e.id);
             return;
         }
+
         // там внутри пишет.. нужно всё разделять
-        // await chatbot.Channel.SendMessageAsync("Сделана.", e.id);
+        TimeSpan passed = (DateTime.UtcNow - match.GameDate) + match.DetailsInfo?.Duration ?? TimeSpan.Zero;
+
+        await chatbot.Channel.SendMessageAsync("Матч ({GetTimeString(passed)} назад)", e.id);
     }
 }
