@@ -11,7 +11,14 @@ public abstract class BaseCommand
 
     public required TimeSpan Cooldown { get; init; }
 
+    /// <summary>
+    /// Только модеры могут юзать. По умолчанию тру.
+    /// </summary>
     public bool ModsOnly { get; init; } = true;
+
+    /// <summary>
+    /// Тока я могу юзать. Фолс по умолчанию.
+    /// </summary>
     public bool MainVillainOnly { get; init; } = false;
 
     public DateTimeOffset? LastUse { get; set; } = null;

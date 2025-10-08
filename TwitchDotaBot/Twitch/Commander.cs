@@ -72,6 +72,17 @@ public class Commander : IHostedService
             Cooldown = TimeSpan.FromSeconds(30),
             MainVillainOnly = true
         },
+        new CreateMatchPredictionCommand()
+        {
+            Triggers =
+            [
+                "ставка",
+                "дота",
+                "прогноз",
+                "сделай"
+            ],
+            Cooldown = TimeSpan.FromSeconds(30)
+        },
         new ClosePredictionCommand()
         {
             Triggers =

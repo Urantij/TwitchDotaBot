@@ -133,7 +133,7 @@ public class Worker : IHostedService
         });
     }
 
-    public async Task StartPredictionAsync()
+    public async Task StartPredictionAsync(MatchModel? match = null)
     {
         _logger.LogInformation("Запускаем ставку.");
 
@@ -160,6 +160,8 @@ public class Worker : IHostedService
             });
 
         CurrentPrediction = response.Data[0];
+
+        CurrentMatch = match;
 
         await _chatBot.Channel.SendMessageAsync("Запустил ставку.");
 
