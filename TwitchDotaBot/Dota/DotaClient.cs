@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dota2Dispenser.Shared.Consts;
@@ -80,6 +81,24 @@ public class DotaClient : IHostedService
             {
                 models = await LoadMatchesAsync(matchDbId: matchDbId, steamId: _appConfig.SteamId,
                     cancellationToken: cancellationToken);
+            }
+            catch (System.Net.Http.HttpRequestException e) when (e.InnerException is SocketException
+                                                                 {
+                                                                     SocketErrorCode: SocketError.ConnectionRefused
+                                                                 })
+            {
+                _logger.LogError("Ошибка при попытке всосать матчи, соединение отказано. Наверное диспенсер здох.");
+
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(20), cancellationToken: cancellationToken);
+                }
+                catch
+                {
+                    return;
+                }
+
+                continue;
             }
             catch (Exception e)
             {
