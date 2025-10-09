@@ -45,11 +45,9 @@ public class Worker : IHostedService
                 return;
             }
 
-            CurrentMatch = obj;
-
             try
             {
-                await StartPredictionAsync();
+                await StartPredictionAsync(obj);
             }
             catch (TwitchLib.Api.Core.Exceptions.BadRequestException e)
             {
