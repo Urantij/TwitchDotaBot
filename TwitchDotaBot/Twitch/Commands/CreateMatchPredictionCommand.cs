@@ -64,11 +64,11 @@ public class CreateMatchPredictionCommand : BaseCommand
         string heroString = "";
         if (heroId != null)
         {
-            HeroModel? model = heroes.FindHero(heroId.Value);
+            string? name = heroes.GerHeroName(heroId.Value);
 
-            if (model != null)
+            if (name != null)
             {
-                heroString = $" ({model.Name})";
+                heroString = $" ({name})";
             }
             else
             {

@@ -43,6 +43,16 @@ public class DotaHeroes : IHostedService
 
     public bool HasAny() => _heroes.Length > 0;
 
+    public string? GerHeroName(int id)
+    {
+        HeroModel? model = FindHero(id);
+
+        if (model != null)
+            return model.LocalizedName ?? model.Name;
+
+        return null;
+    }
+
     public HeroModel? FindHero(int id)
     {
         return _heroes.FirstOrDefault(h => h.Id == id);

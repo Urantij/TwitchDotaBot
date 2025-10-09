@@ -66,10 +66,10 @@ public class PrevPlayersCommand : BaseCommand
                 .Where(p => p.latestPlayer.SteamId != appOptions.Value.SteamId)
                 .Select(p => new
                 {
-                    now = heroes.FindHero(p.latestPlayer.HeroId),
-                    was = heroes.FindHero(p.recentPlayer.HeroId)
+                    now = heroes.GerHeroName(p.latestPlayer.HeroId),
+                    was = heroes.GerHeroName(p.recentPlayer.HeroId)
                 })
-                .Select(pair => $"{pair.was?.Name ?? "???"} => {pair.now?.Name ?? "???"}")
+                .Select(pair => $"{pair.was ?? "???"} => {pair.now ?? "???"}")
                 .ToArray();
 
             if (prevs.Length == 0)
@@ -79,7 +79,7 @@ public class PrevPlayersCommand : BaseCommand
             }
 
             string reply = string.Join(", ", prevs);
-            
+
             await chatBot.Channel.SendMessageAsync(reply, e.id);
             return;
         }
