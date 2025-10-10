@@ -16,18 +16,20 @@ public class Worker : IHostedService
     private readonly DotaClient _dota;
     private readonly ChatBot _chatBot;
     private readonly SuperApi _api;
+    private readonly DotaHeroes _heroes;
     private readonly AppConfig _appConfig;
     private readonly ILogger<Worker> _logger;
 
     public MatchModel? CurrentMatch { get; private set; }
     public Prediction? CurrentPrediction { get; private set; }
 
-    public Worker(DotaClient dota, ChatBot chatBot, SuperApi api, IOptions<AppConfig> appOptions,
+    public Worker(DotaClient dota, ChatBot chatBot, SuperApi api, DotaHeroes heroes, IOptions<AppConfig> appOptions,
         ILogger<Worker> logger)
     {
         _dota = dota;
         _chatBot = chatBot;
         _api = api;
+        _heroes = heroes;
         _appConfig = appOptions.Value;
         _logger = logger;
 
@@ -144,16 +146,46 @@ public class Worker : IHostedService
 
         TwitchAPI api = await _api.GetApiAsync();
 
-        string title;
+        string? heroName = null;
+        // ну по приколу чисто заюзал
+        if (match?.Players?.FirstOrDefault(p => p.SteamId == _appConfig.SteamId)?.HeroId is { } heroId)
+        {
+            heroName = _heroes.GerHeroName(heroId);
+        }
 
-        TimeSpan? passed = DateTime.UtcNow - CurrentMatch?.GameDate;
+        string title;
+        TimeSpan? passed = DateTime.UtcNow - match?.GameDate;
         if (passed > TimeSpan.FromMinutes(5))
         {
-            title = $"Победа в игре дота2? ({passed.Value.TotalMinutes:F0} минут назад)";
+            title = $"Победа в игре дота2? ({passed.Value.TotalMinutes:F0}м назад)";
         }
         else
         {
             title = "Победа в игре дота2?";
+        }
+
+        const int titlesLimit = 45;
+
+        if (heroName != null)
+        {
+            if (title.Length + heroName.Length + 1 > titlesLimit)
+            {
+                int diff = (title.Length + heroName.Length + 1) - titlesLimit;
+
+                if (diff >= heroName.Length + 1)
+                {
+                    heroName = null;
+                }
+                else
+                {
+                    heroName = heroName.Substring(0, heroName.Length - diff);
+                }
+            }
+
+            if (heroName != null)
+            {
+                title += $" {heroName}";
+            }
         }
 
         CreatePredictionResponse response = await api.Helix.Predictions.CreatePredictionAsync(
