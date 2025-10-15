@@ -85,24 +85,7 @@ public class Worker : IHostedService
 
         CurrentMatch = obj;
 
-        bool? win;
-        if (obj.MatchResult == MatchResult.Finished)
-        {
-            bool? isRadiant = obj.Players?.FirstOrDefault(p => p.SteamId == _appConfig.SteamId)?.TeamNumber == 0;
-
-            if (isRadiant == null)
-            {
-                win = null;
-            }
-            else
-            {
-                win = obj.DetailsInfo?.RadiantWin == isRadiant;
-            }
-        }
-        else
-        {
-            win = null;
-        }
+        bool? win = DetermineWin(obj, _appConfig.SteamId);
 
         Prediction thatPrediction = CurrentPrediction;
         MatchModel thatMatch = CurrentMatch;
@@ -253,5 +236,25 @@ public class Worker : IHostedService
         _dota.MatchClosed -= DotaOnMatchClosed;
 
         return Task.CompletedTask;
+    }
+
+    // вот бы хелпер сделать дааа
+    public static bool? DetermineWin(MatchModel match, ulong id)
+    {
+        if (match.MatchResult == MatchResult.Finished)
+        {
+            bool? isRadiant = match.Players?.FirstOrDefault(p => p.SteamId == id)?.TeamNumber == 0;
+
+            if (isRadiant == null)
+            {
+                return null;
+            }
+
+            return match.DetailsInfo?.RadiantWin == isRadiant;
+        }
+        else
+        {
+            return null;
+        }
     }
 }

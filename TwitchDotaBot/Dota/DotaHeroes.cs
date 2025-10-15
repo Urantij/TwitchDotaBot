@@ -25,7 +25,7 @@ public class HeroModel
 
 public class DotaHeroesConfig
 {
-    public string FilePath { get; } = "./DotaHeroes.json";
+    public string FilePath { get; set; } = "./DotaHeroes.json";
 }
 
 public class DotaHeroes : IHostedService
@@ -42,6 +42,18 @@ public class DotaHeroes : IHostedService
     }
 
     public bool HasAny() => _heroes.Length > 0;
+
+    public HeroModel? TryFindHero(string search)
+    {
+        HeroModel? result = _heroes.FirstOrDefault(h =>
+            h.LocalizedName?.Equals(search, StringComparison.OrdinalIgnoreCase) == true);
+
+        if (result != null)
+            return result;
+
+        return _heroes.FirstOrDefault(h =>
+            h.LocalizedName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true);
+    }
 
     public string? GerHeroName(int id)
     {

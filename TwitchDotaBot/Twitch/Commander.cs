@@ -102,6 +102,15 @@ public class Commander : IHostedService
                 "прошлые"
             ],
             Cooldown = TimeSpan.FromSeconds(30),
+        },
+        new WinrateAgainstCommand()
+        {
+            Triggers =
+            [
+                "противостояния",
+                "против",
+            ],
+            Cooldown = TimeSpan.FromMinutes(5)
         }
     ];
 

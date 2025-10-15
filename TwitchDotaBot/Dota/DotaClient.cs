@@ -154,8 +154,41 @@ public class DotaClient : IHostedService
         }
     }
 
+    // в теории этот метод должен лежать в хелпере, но мне похуй
+    /// <summary>
+    /// не сортированы по айди
+    /// </summary>
+    /// <param name="playerSteamId"></param>
+    /// <returns></returns>
+    public async Task<List<MatchModel>> LoadAllPlayersMatchesAsync(ulong playerSteamId)
+    {
+        // TODO в теории нужно грузить только матчи, где И стример И цель. Но. мне. впадлу.
+
+        List<MatchModel> result = [];
+
+        int? beforeId = null;
+
+        while (true)
+        {
+            MatchModel[] batch = await LoadMatchesAsync(steamId: playerSteamId, beforeId: beforeId);
+
+            if (batch.Length > 0)
+            {
+                beforeId = batch.Last().Id;
+
+                result.AddRange(batch);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return result;
+    }
+
     public async Task<MatchModel[]> LoadMatchesAsync(int? matchDbId = null, ulong? steamId = null,
-        DateTimeOffset? afterDate = null, int? limit = null,
+        DateTimeOffset? afterDate = null, int? limit = null, int? sinceId = null, int? beforeId = null,
         CancellationToken cancellationToken = default)
     {
         NameValueCollection query = System.Web.HttpUtility.ParseQueryString(string.Empty);
@@ -178,6 +211,16 @@ public class DotaClient : IHostedService
         if (limit != null)
         {
             query[Dota2DispenserParams.limitFilter] = limit.Value.ToString();
+        }
+
+        if (sinceId != null)
+        {
+            query[Dota2DispenserParams.sinceIdFilter] = sinceId.Value.ToString();
+        }
+
+        if (beforeId != null)
+        {
+            query[Dota2DispenserParams.beforeIdFilter] = beforeId.Value.ToString();
         }
 
         UriBuilder uriBuilder = new(new Uri(_dotaConfig.ServerAddress, Dota2DispenserPoints.matches));
