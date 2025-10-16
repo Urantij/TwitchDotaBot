@@ -241,7 +241,7 @@ public class Worker : IHostedService
     // вот бы хелпер сделать дааа
     public static bool? DetermineWin(MatchModel match, ulong id)
     {
-        if (match.MatchResult == MatchResult.Finished)
+        if (match.MatchResult == MatchResult.Finished && match.DetailsInfo?.RadiantWin != null)
         {
             bool? isRadiant = match.Players?.FirstOrDefault(p => p.SteamId == id)?.TeamNumber == 0;
 
@@ -250,7 +250,7 @@ public class Worker : IHostedService
                 return null;
             }
 
-            return match.DetailsInfo?.RadiantWin == isRadiant;
+            return match.DetailsInfo.RadiantWin == isRadiant;
         }
         else
         {
