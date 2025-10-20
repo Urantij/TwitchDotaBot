@@ -1,4 +1,5 @@
 using TwitchDotaBot.Dota;
+using TwitchDotaBot.Job;
 using TwitchDotaBot.Twitch;
 
 namespace TwitchDotaBot;
@@ -43,6 +44,9 @@ public class Program
 
         builder.Services.AddSingleton<MedusaShame>();
         builder.Services.AddHostedService<MedusaShame>(p => p.GetRequiredService<MedusaShame>());
+
+        builder.Services.AddSingleton<LastikiAnnouncer>();
+        builder.Services.AddHostedService<LastikiAnnouncer>(p => p.GetRequiredService<LastikiAnnouncer>());
 
         IHost host = builder.Build();
 

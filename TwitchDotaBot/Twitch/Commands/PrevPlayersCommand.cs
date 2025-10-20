@@ -51,26 +51,7 @@ public class PrevPlayersCommand : BaseCommand
                 return;
             }
 
-            var prevs = latest.Players.Select(latestPlayer =>
-                {
-                    PlayerModel? recentPlayer =
-                        recentOver.Players.FirstOrDefault(p => p.SteamId == latestPlayer.SteamId);
-
-                    return new
-                    {
-                        latestPlayer,
-                        recentPlayer
-                    };
-                })
-                .Where(p => p.recentPlayer != null)
-                .Where(p => p.latestPlayer.SteamId != appOptions.Value.SteamId)
-                .Select(p => new
-                {
-                    now = heroes.GerHeroName(p.latestPlayer.HeroId),
-                    was = heroes.GerHeroName(p.recentPlayer.HeroId)
-                })
-                .Select(pair => $"{pair.was ?? "???"} => {pair.now ?? "???"}")
-                .ToArray();
+            string[] prevs = GenerateArrows(latest.Players, recentOver.Players, appOptions.Value.SteamId, heroes);
 
             if (prevs.Length == 0)
             {
@@ -85,5 +66,30 @@ public class PrevPlayersCommand : BaseCommand
         }
 
         await chatBot.Channel.SendMessageAsync("Непонятно.", e.id);
+    }
+
+    public static string[] GenerateArrows(ICollection<PlayerModel> latestPlayers,
+        ICollection<PlayerModel> recentOverPlayers, ulong ignoreSteamId, DotaHeroes heroes)
+    {
+        return latestPlayers.Select(latestPlayer =>
+            {
+                PlayerModel? recentPlayer =
+                    recentOverPlayers.FirstOrDefault(p => p.SteamId == latestPlayer.SteamId);
+
+                return new
+                {
+                    latestPlayer,
+                    recentPlayer
+                };
+            })
+            .Where(p => p.recentPlayer != null)
+            .Where(p => p.latestPlayer.SteamId != ignoreSteamId)
+            .Select(p => new
+            {
+                now = heroes.GerHeroName(p.latestPlayer.HeroId),
+                was = heroes.GerHeroName(p.recentPlayer.HeroId)
+            })
+            .Select(pair => $"{pair.was ?? "???"} => {pair.now ?? "???"}")
+            .ToArray();
     }
 }

@@ -102,6 +102,7 @@ public class Commander : IHostedService
                 "прошлые"
             ],
             Cooldown = TimeSpan.FromSeconds(30),
+            ModsOnly = false,
         },
         new WinrateAgainstCommand()
         {

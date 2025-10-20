@@ -8,4 +8,6 @@ public class AppConfig
 
     public int PredictionTimeWindow { get; set; } = 200;
     public string MainVillainName { get; set; } = "urantij";
+
+    public bool AnnounceLastiki { get; set; } = true;
 }
