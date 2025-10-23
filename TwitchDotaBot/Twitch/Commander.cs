@@ -112,6 +112,15 @@ public class Commander : IHostedService
                 "против",
             ],
             Cooldown = TimeSpan.FromMinutes(5)
+        },
+        new WinrateTogetherCommand()
+        {
+            Triggers =
+            [
+                "вместестояния",
+                "вместе",
+            ],
+            Cooldown = TimeSpan.FromMinutes(5)
         }
     ];
 
