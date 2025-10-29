@@ -1,8 +1,10 @@
+using System.Text;
 using Dota2Dispenser.Shared.Consts;
 using Dota2Dispenser.Shared.Models;
 using Microsoft.Extensions.Options;
 using TwitchDotaBot.Dota;
 using TwitchDotaBot.Twitch;
+using TwitchDotaBot.Twitch.Commands;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Predictions;
@@ -218,7 +220,75 @@ public class Worker : IHostedService
 
         CurrentPrediction = null;
 
-        await _chatBot.Channel.SendMessageAsync("Закрыл ставку.");
+        int wins = 0;
+        int loses = 0;
+        bool? isStreakWin = null;
+        try
+        {
+            (wins, loses, _, isStreakWin) = await StatCommand.LoadMatchesStatsAsync(_dota, _appConfig.SteamId);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Не удалось стату за стрим подгрузить.");
+        }
+
+        // xd
+        StringBuilder sb = new();
+        if (win == true)
+        {
+            string phrase;
+
+            if (isStreakWin == true)
+            {
+                phrase = Random.Shared.GetItems([
+                    "Очередная победа",
+                    "Ещё одна победа",
+                    "Очередной вин",
+                    "Ещё один вин",
+                ], 1)[0];
+            }
+            else
+            {
+                phrase = Random.Shared.GetItems([
+                    "Победа",
+                    "Вин",
+                ], 1)[0];
+            }
+
+            sb.Append(phrase);
+            sb.Append(" EZ");
+        }
+        else
+        {
+            string phrase;
+
+            if (isStreakWin == false)
+            {
+                phrase = Random.Shared.GetItems([
+                    "Очередное поражение",
+                    "Ещё одно поражение",
+                    "Очередной луз",
+                    "Ещё один луз",
+                ], 1)[0];
+            }
+            else
+            {
+                phrase = Random.Shared.GetItems([
+                    "Поражение",
+                    "Луз",
+                ], 1)[0];
+            }
+
+            sb.Append(phrase);
+            sb.Append(" Sadge");
+        }
+
+        if (wins != 0 || loses != 0)
+        {
+            sb.Append($" {wins}-{loses}");
+        }
+
+        await _chatBot.Channel.SendMessageAsync(sb.ToString());
 
         _logger.LogInformation("Закрыл ставку {id}", prediction.Id);
     }
