@@ -110,6 +110,6 @@ public class WinrateAgainstCommand : BaseCommand
 
         float winrate = ((float)wins / (float)total) * 100;
 
-        await chatbot.Channel.SendMessageAsync($"Против {hero.LocalizedName} {winrate:F2}% ({wins}/{loses})", e.id);
+        await chatbot.Channel.SendMessageAsync($"Против {hero.LocalizedName} {winrate:F2}% ({wins}-{loses})", e.id);
     }
 }
