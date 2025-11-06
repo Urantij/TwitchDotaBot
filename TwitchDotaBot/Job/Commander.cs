@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Options;
+using TwitchDotaBot.Twitch;
 using TwitchDotaBot.Twitch.Commands;
 using TwitchSimpleLib.Chat.Messages;
 
-namespace TwitchDotaBot.Twitch;
+namespace TwitchDotaBot.Job;
 
 public class Commander : IHostedService
 {

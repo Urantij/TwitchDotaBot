@@ -1,8 +1,9 @@
 using Dota2Dispenser.Shared.Models;
 using Microsoft.Extensions.Options;
 using TwitchDotaBot.Dota;
+using TwitchDotaBot.Twitch;
 
-namespace TwitchDotaBot.Twitch;
+namespace TwitchDotaBot.Job;
 
 public class MedusaShameConfig
 {
