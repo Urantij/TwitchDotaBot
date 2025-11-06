@@ -26,6 +26,8 @@ public class DotaClient : IHostedService
     private readonly AppConfig _appConfig;
     private readonly ILogger<DotaClient> _logger;
 
+    private readonly Lock _lock = new();
+
     /// <summary>
     /// Объект меняется
     /// </summary>
@@ -57,6 +59,17 @@ public class DotaClient : IHostedService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Перестать следить за текущим матчем
+    /// </summary>
+    public void DropCurrentMatch()
+    {
+        lock (_lock)
+        {
+            CurrentMatch = null;
+        }
+    }
+
     private async Task WorkLoopAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
@@ -71,9 +84,12 @@ public class DotaClient : IHostedService
             }
 
             int? matchDbId = null;
-            if (CurrentMatch is { MatchResult: MatchResult.None })
+            lock (_lock)
             {
-                matchDbId = CurrentMatch.Id;
+                if (CurrentMatch is { MatchResult: MatchResult.None })
+                {
+                    matchDbId = CurrentMatch.Id;
+                }
             }
 
             MatchModel[] models;
@@ -121,18 +137,28 @@ public class DotaClient : IHostedService
 
             MatchModel freshModel = models[0];
 
+            using var scope = _lock.EnterScope();
+
+            if (matchDbId != null && CurrentMatch?.Id != matchDbId)
+            {
+                // Вне лока произошло изменение, скипаем цикл
+                continue;
+            }
+
             if (matchDbId != null)
             {
                 CurrentMatch = freshModel;
 
-                if (CurrentMatch.MatchResult != MatchResult.None)
+                if (freshModel.MatchResult != MatchResult.None)
                 {
-                    _logger.LogInformation("Закрываем матч {id}", CurrentMatch.Id);
-                    MatchClosed?.Invoke(CurrentMatch);
+                    _logger.LogInformation("Закрываем матч {id}", freshModel.Id);
+                    scope.Dispose();
+                    MatchClosed?.Invoke(freshModel);
                 }
                 else
                 {
-                    MatchUpdated?.Invoke(CurrentMatch);
+                    scope.Dispose();
+                    MatchUpdated?.Invoke(freshModel);
                 }
 
                 continue;
@@ -146,7 +172,8 @@ public class DotaClient : IHostedService
                 _logger.LogInformation("Открываем матч {id}", freshModel.Id);
 
                 CurrentMatch = freshModel;
-                NewMatchFound?.Invoke(CurrentMatch);
+                scope.Dispose();
+                NewMatchFound?.Invoke(freshModel);
                 continue;
             }
 

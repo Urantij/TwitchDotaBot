@@ -1,3 +1,4 @@
+using TwitchDotaBot.Dota;
 using TwitchLib.Api.Core.Enums;
 using TwitchSimpleLib.Chat.Messages;
 
@@ -16,7 +17,7 @@ public class CancelPredictionCommand : BaseCommand
             await chatbot.Channel.SendMessageAsync("Не вижу предикт.", e.id);
             return;
         }
-        
+
         if (worker.CurrentPrediction.Status is PredictionStatus.CANCELED or PredictionStatus.RESOLVED)
         {
             await chatbot.Channel.SendMessageAsync("Предикт уже закончен.", e.id);
@@ -24,6 +25,7 @@ public class CancelPredictionCommand : BaseCommand
         }
 
         await worker.ClosePredictionAsync(null, worker.CurrentPrediction);
+        provider.GetRequiredService<DotaClient>().DropCurrentMatch();
         await chatbot.Channel.SendMessageAsync("Сделана.", e.id);
     }
 }
