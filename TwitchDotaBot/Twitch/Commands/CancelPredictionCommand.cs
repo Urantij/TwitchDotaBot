@@ -24,8 +24,12 @@ public class CancelPredictionCommand : BaseCommand
             return;
         }
 
+        var dota = provider.GetRequiredService<DotaClient>();
+
+        worker.MatchModelToIgnore = dota.CurrentMatch;
+        dota.DropCurrentMatch();
+
         await worker.ClosePredictionAsync(null, worker.CurrentPrediction);
-        provider.GetRequiredService<DotaClient>().DropCurrentMatch();
         await chatbot.Channel.SendMessageAsync("Сделана.", e.id);
     }
 }

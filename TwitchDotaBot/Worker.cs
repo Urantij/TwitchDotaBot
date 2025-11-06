@@ -22,6 +22,8 @@ public class Worker : IHostedService
     private readonly AppConfig _appConfig;
     private readonly ILogger<Worker> _logger;
 
+    public MatchModel? MatchModelToIgnore { get; set; }
+
     public MatchModel? CurrentMatch { get; private set; }
     public Prediction? CurrentPrediction { get; private set; }
 
@@ -41,6 +43,12 @@ public class Worker : IHostedService
 
     private void DotaOnNewMatchFound(MatchModel obj)
     {
+        if (MatchModelToIgnore?.Id == obj.Id)
+        {
+            _logger.LogInformation("Пришёл новый матч, игнорируем.");
+            return;
+        }
+
         Task.Run(async () =>
         {
             if (CurrentPrediction != null && CurrentMatch?.MatchResult == MatchResult.None)
