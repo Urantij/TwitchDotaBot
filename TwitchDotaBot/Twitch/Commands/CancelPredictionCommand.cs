@@ -1,4 +1,5 @@
 using TwitchDotaBot.Dota;
+using TwitchDotaBot.Job;
 using TwitchLib.Api.Core.Enums;
 using TwitchSimpleLib.Chat.Messages;
 
@@ -23,11 +24,6 @@ public class CancelPredictionCommand : BaseCommand
             await chatbot.Channel.SendMessageAsync("Предикт уже закончен.", e.id);
             return;
         }
-
-        var dota = provider.GetRequiredService<DotaClient>();
-
-        worker.MatchModelToIgnore = dota.CurrentMatch;
-        dota.DropCurrentMatch();
 
         await worker.ClosePredictionAsync(null, worker.CurrentPrediction);
         await chatbot.Channel.SendMessageAsync("Сделана.", e.id);

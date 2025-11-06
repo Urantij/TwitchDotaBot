@@ -1,3 +1,4 @@
+using TwitchDotaBot.Job;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Predictions;
 using TwitchSimpleLib.Chat.Messages;
@@ -11,7 +12,7 @@ public class ClosePredictionCommand : BaseCommand
     {
         var worker = provider.GetRequiredService<Worker>();
         var chatbot = provider.GetRequiredService<ChatBot>();
-        
+
         Prediction? currentPrediction = worker.CurrentPrediction;
 
         if (currentPrediction == null)
@@ -19,7 +20,7 @@ public class ClosePredictionCommand : BaseCommand
             await chatbot.Channel.SendMessageAsync("Не вижу предикт.", e.id);
             return;
         }
-        
+
         if (currentPrediction.Status is PredictionStatus.CANCELED or PredictionStatus.RESOLVED)
         {
             await chatbot.Channel.SendMessageAsync("Предикт уже закончен.", e.id);

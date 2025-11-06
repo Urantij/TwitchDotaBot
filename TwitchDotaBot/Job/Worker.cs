@@ -11,10 +11,11 @@ using TwitchLib.Api.Helix.Models.Predictions;
 using TwitchLib.Api.Helix.Models.Predictions.CreatePrediction;
 using Outcome = TwitchLib.Api.Helix.Models.Predictions.CreatePrediction.Outcome;
 
-namespace TwitchDotaBot;
+namespace TwitchDotaBot.Job;
 
 public class Worker : IHostedService
 {
+    private readonly MatchTracker _tracker;
     private readonly DotaClient _dota;
     private readonly ChatBot _chatBot;
     private readonly SuperApi _api;
@@ -22,14 +23,14 @@ public class Worker : IHostedService
     private readonly AppConfig _appConfig;
     private readonly ILogger<Worker> _logger;
 
-    public MatchModel? MatchModelToIgnore { get; set; }
-
-    public MatchModel? CurrentMatch { get; private set; }
     public Prediction? CurrentPrediction { get; private set; }
+    public MatchWithTracking? CurrentMatch { get; private set; }
 
-    public Worker(DotaClient dota, ChatBot chatBot, SuperApi api, DotaHeroes heroes, IOptions<AppConfig> appOptions,
+    public Worker(MatchTracker tracker, DotaClient dota, ChatBot chatBot, SuperApi api, DotaHeroes heroes,
+        IOptions<AppConfig> appOptions,
         ILogger<Worker> logger)
     {
+        _tracker = tracker;
         _dota = dota;
         _chatBot = chatBot;
         _api = api;
@@ -37,23 +38,17 @@ public class Worker : IHostedService
         _appConfig = appOptions.Value;
         _logger = logger;
 
-        _dota.NewMatchFound += DotaOnNewMatchFound;
-        _dota.MatchClosed += DotaOnMatchClosed;
+        _tracker.NewMatchFound += TrackerOnNewMatchFound;
     }
 
-    private void DotaOnNewMatchFound(MatchModel obj)
+    private void TrackerOnNewMatchFound(MatchContainer obj)
     {
-        if (MatchModelToIgnore?.Id == obj.Id)
-        {
-            _logger.LogInformation("Пришёл новый матч, игнорируем.");
-            return;
-        }
-
         Task.Run(async () =>
         {
-            if (CurrentPrediction != null && CurrentMatch?.MatchResult == MatchResult.None)
+            if (CurrentPrediction != null)
             {
-                await _chatBot.Channel.SendMessageAsync($"Найден новый матч, но прогноз уже существует.");
+                await _chatBot.Channel.SendMessageAsync(
+                    $"Найден новый матч, но прогноз уже существует. =отмена =сделай если нужно отменить и создать новый прогноз.");
                 return;
             }
 
@@ -85,20 +80,18 @@ public class Worker : IHostedService
         });
     }
 
-    private void DotaOnMatchClosed(MatchModel obj)
+    private void TrackingOnClosed(MatchWithTracking tracking)
     {
-        if (obj.Id != CurrentMatch?.Id)
+        if (tracking != CurrentMatch)
             return;
 
-        if (CurrentPrediction == null)
+        Prediction? thatPrediction = CurrentPrediction;
+
+        if (thatPrediction == null)
             return;
 
-        CurrentMatch = obj;
+        bool? win = DetermineWin(tracking.Model, _appConfig.SteamId);
 
-        bool? win = DetermineWin(obj, _appConfig.SteamId);
-
-        Prediction thatPrediction = CurrentPrediction;
-        MatchModel thatMatch = CurrentMatch;
         Task.Run(async () =>
         {
             try
@@ -133,21 +126,21 @@ public class Worker : IHostedService
         });
     }
 
-    public async Task StartPredictionAsync(MatchModel? match = null)
+    public async Task StartPredictionAsync(MatchContainer? container = null)
     {
-        _logger.LogInformation("Запускаем ставку.");
+        _logger.LogInformation("Запускаем ставку {id}.", container?.Model.Id);
 
         TwitchAPI api = await _api.GetApiAsync();
 
         string? heroName = null;
         // ну по приколу чисто заюзал
-        if (match?.Players?.FirstOrDefault(p => p.SteamId == _appConfig.SteamId)?.HeroId is { } heroId)
+        if (container?.Model.Players?.FirstOrDefault(p => p.SteamId == _appConfig.SteamId)?.HeroId is { } heroId)
         {
             heroName = _heroes.GerHeroName(heroId);
         }
 
         string title;
-        TimeSpan? passed = DateTime.UtcNow - match?.GameDate;
+        TimeSpan? passed = DateTime.UtcNow - container?.Model.GameDate;
         if (passed > TimeSpan.FromMinutes(5))
         {
             title = $"Победа в игре дота2? ({passed.Value.TotalMinutes:F0}м назад)";
@@ -189,9 +182,14 @@ public class Worker : IHostedService
                 Outcomes = [new Outcome { Title = "Да" }, new Outcome { Title = "Нет" }]
             });
 
+        // TODO в закрытии эта логика вынесена, а тут она внутри этого метода
         CurrentPrediction = response.Data[0];
+        CurrentMatch = container?.Sub();
 
-        CurrentMatch = match;
+        if (CurrentMatch != null)
+        {
+            CurrentMatch.Closed = () => TrackingOnClosed(CurrentMatch);
+        }
 
         await _chatBot.Channel.SendMessageAsync("Запустил ставку.");
 
@@ -221,7 +219,10 @@ public class Worker : IHostedService
             prediction.Outcomes.FirstOrDefault(p => p.Title == targetTitle);
 
         if (targetOutcome == null)
+        {
+            _logger.LogCritical("А НУЖНО БЫЛО ВЫВОДИТЬ В КОНСТАНТЫ, ДЕБИЛ БЛЯ");
             return;
+        }
 
         await api.Helix.Predictions.EndPredictionAsync(_appConfig.TwitchId, prediction.Id,
             PredictionEndStatus.RESOLVED, targetOutcome.Id);
@@ -310,8 +311,8 @@ public class Worker : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _dota.NewMatchFound -= DotaOnNewMatchFound;
-        _dota.MatchClosed -= DotaOnMatchClosed;
+        _tracker.NewMatchFound -= TrackerOnNewMatchFound;
+        CurrentMatch?.Drop();
 
         return Task.CompletedTask;
     }

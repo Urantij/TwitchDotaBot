@@ -2,6 +2,7 @@ using Dota2Dispenser.Shared.Consts;
 using Dota2Dispenser.Shared.Models;
 using Microsoft.Extensions.Options;
 using TwitchDotaBot.Dota;
+using TwitchDotaBot.Job;
 using TwitchSimpleLib.Chat.Messages;
 
 namespace TwitchDotaBot.Twitch.Commands;
@@ -12,19 +13,20 @@ public class WinrateTogetherCommand : BaseCommand
         CancellationToken cancellationToken = default)
     {
         var dota = provider.GetRequiredService<DotaClient>();
+        var tracker = provider.GetRequiredService<MatchTracker>();
         var chatbot = provider.GetRequiredService<ChatBot>();
         var heroes = provider.GetRequiredService<DotaHeroes>();
         var appOptions = provider.GetRequiredService<IOptions<AppConfig>>();
 
-        MatchModel? match = dota.CurrentMatch;
+        MatchContainer? container = tracker.LatestMatch;
 
-        if (match == null)
+        if (container == null)
         {
             await chatbot.Channel.SendMessageAsync("Не вижу игру.", e.id);
             return;
         }
 
-        if (match.Players == null)
+        if (container.Model.Players == null)
         {
             await chatbot.Channel.SendMessageAsync("Матч есть, но герои ещё неизвестны.", e.id);
             return;
@@ -47,7 +49,7 @@ public class WinrateTogetherCommand : BaseCommand
             return;
         }
 
-        PlayerModel? player = match.Players.FirstOrDefault(p => p.HeroId == hero.Id);
+        PlayerModel? player = container.Model.Players.FirstOrDefault(p => p.HeroId == hero.Id);
 
         if (player == null)
         {

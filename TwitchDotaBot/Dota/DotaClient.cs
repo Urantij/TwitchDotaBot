@@ -19,166 +19,21 @@ public class DotaConfig
     public required Uri ServerAddress { get; init; }
 }
 
-public class DotaClient : IHostedService
+/// <summary>
+/// Позволяет делать запросы в диспенсер.
+/// </summary>
+public class DotaClient
 {
     private readonly HttpClient _client;
     private readonly DotaConfig _dotaConfig;
-    private readonly AppConfig _appConfig;
     private readonly ILogger<DotaClient> _logger;
 
-    private readonly Lock _lock = new();
-
-    /// <summary>
-    /// Объект меняется
-    /// </summary>
-    public MatchModel? CurrentMatch { get; private set; }
-
-    public event Action<MatchModel>? NewMatchFound;
-    public event Action<MatchModel>? MatchUpdated;
-    public event Action<MatchModel>? MatchClosed;
-
-    public DotaClient(IOptions<DotaConfig> dotaOptions, IOptions<AppConfig> appOptions,
-        ILogger<DotaClient> logger)
+    public DotaClient(IOptions<DotaConfig> dotaOptions, ILogger<DotaClient> logger)
     {
         _client = new HttpClient();
 
         _dotaConfig = dotaOptions.Value;
-        _appConfig = appOptions.Value;
         _logger = logger;
-    }
-
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        Task.Run(() => WorkLoopAsync(cancellationToken: cancellationToken), cancellationToken);
-
-        return Task.CompletedTask;
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Перестать следить за текущим матчем
-    /// </summary>
-    public void DropCurrentMatch()
-    {
-        lock (_lock)
-        {
-            CurrentMatch = null;
-        }
-    }
-
-    private async Task WorkLoopAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken: cancellationToken);
-            }
-            catch
-            {
-                return;
-            }
-
-            int? matchDbId = null;
-            lock (_lock)
-            {
-                if (CurrentMatch is { MatchResult: MatchResult.None })
-                {
-                    matchDbId = CurrentMatch.Id;
-                }
-            }
-
-            MatchModel[] models;
-            try
-            {
-                models = await LoadMatchesAsync(matchDbId: matchDbId, steamId: _appConfig.SteamId,
-                    cancellationToken: cancellationToken);
-            }
-            catch (System.Net.Http.HttpRequestException e) when (e.InnerException is SocketException
-                                                                 {
-                                                                     SocketErrorCode: SocketError.ConnectionRefused
-                                                                 })
-            {
-                _logger.LogError("Ошибка при попытке всосать матчи, соединение отказано. Наверное диспенсер здох.");
-
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(20), cancellationToken: cancellationToken);
-                }
-                catch
-                {
-                    return;
-                }
-
-                continue;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Ошибка при попытке всосать матчи.");
-
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(20), cancellationToken: cancellationToken);
-                }
-                catch
-                {
-                    return;
-                }
-
-                continue;
-            }
-
-            if (models.Length == 0)
-                continue;
-
-            MatchModel freshModel = models[0];
-
-            using var scope = _lock.EnterScope();
-
-            if (matchDbId != null && CurrentMatch?.Id != matchDbId)
-            {
-                // Вне лока произошло изменение, скипаем цикл
-                continue;
-            }
-
-            if (matchDbId != null)
-            {
-                CurrentMatch = freshModel;
-
-                if (freshModel.MatchResult != MatchResult.None)
-                {
-                    _logger.LogInformation("Закрываем матч {id}", freshModel.Id);
-                    scope.Dispose();
-                    MatchClosed?.Invoke(freshModel);
-                }
-                else
-                {
-                    scope.Dispose();
-                    MatchUpdated?.Invoke(freshModel);
-                }
-
-                continue;
-            }
-
-            if (CurrentMatch?.Id != freshModel.Id)
-            {
-                if (freshModel.MatchResult != MatchResult.None)
-                    continue;
-
-                _logger.LogInformation("Открываем матч {id}", freshModel.Id);
-
-                CurrentMatch = freshModel;
-                scope.Dispose();
-                NewMatchFound?.Invoke(freshModel);
-                continue;
-            }
-
-            CurrentMatch = freshModel;
-        }
     }
 
     // в теории этот метод должен лежать в хелпере, но мне похуй

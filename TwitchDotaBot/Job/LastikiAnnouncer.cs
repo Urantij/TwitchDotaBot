@@ -8,7 +8,7 @@ namespace TwitchDotaBot.Job;
 
 public class LastikiAnnouncer : IHostedService
 {
-    private readonly DotaClient _dota;
+    private readonly MatchTracker _tracker;
     private readonly ChatBot _chat;
     private readonly DotaHeroes _heroes;
     private readonly AppConfig _options;
@@ -16,10 +16,10 @@ public class LastikiAnnouncer : IHostedService
 
     private MatchModel? _lastAnnounce;
 
-    public LastikiAnnouncer(DotaClient dota, ChatBot chat, DotaHeroes heroes, IOptions<AppConfig> options,
+    public LastikiAnnouncer(MatchTracker tracker, ChatBot chat, DotaHeroes heroes, IOptions<AppConfig> options,
         ILogger<LastikiAnnouncer> logger)
     {
-        _dota = dota;
+        _tracker = tracker;
         _chat = chat;
         _heroes = heroes;
         _options = options.Value;
@@ -28,42 +28,43 @@ public class LastikiAnnouncer : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _dota.MatchUpdated += DotaOnMatchUpdated;
+        _tracker.LatestMatchUpdated += MatchUpdated;
 
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _dota.MatchUpdated -= DotaOnMatchUpdated;
+        _tracker.LatestMatchUpdated -= MatchUpdated;
 
         return Task.CompletedTask;
     }
 
-    private void DotaOnMatchUpdated(MatchModel obj)
+    private void MatchUpdated(MatchContainer container)
     {
         if (!_options.AnnounceLastiki)
             return;
 
-        if (obj.Id == _lastAnnounce?.Id)
+        if (container.Model.Id == _lastAnnounce?.Id)
             return;
 
-        if (obj.Players == null)
+        if (container.Model.Players == null)
             return;
 
-        if (obj.Players.Any(p => p.HeroId == 0))
+        if (container.Model.Players.Any(p => p.HeroId == 0))
             return;
 
         if (_lastAnnounce == null)
         {
-            _lastAnnounce = obj;
+            _lastAnnounce = container.Model;
             return;
         }
 
         string[] prevs =
-            PrevPlayersCommand.GenerateArrows(obj.Players, _lastAnnounce.Players, _options.SteamId, _heroes);
+            PrevPlayersCommand.GenerateArrows(container.Model.Players, _lastAnnounce.Players, _options.SteamId,
+                _heroes);
 
-        _lastAnnounce = obj;
+        _lastAnnounce = container.Model;
 
         _logger.LogInformation("Нашли всех игроков, стрелочек: {arrows}", prevs.Length);
 

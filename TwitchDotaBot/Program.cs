@@ -34,7 +34,9 @@ public class Program
         builder.Services.AddHostedService<DotaHeroes>(p => p.GetRequiredService<DotaHeroes>());
 
         builder.Services.AddSingleton<DotaClient>();
-        builder.Services.AddHostedService<DotaClient>(p => p.GetRequiredService<DotaClient>());
+
+        builder.Services.AddSingleton<MatchTracker>();
+        builder.Services.AddHostedService<MatchTracker>(p => p.GetRequiredService<MatchTracker>());
 
         builder.Services.AddSingleton<Commander>();
         builder.Services.AddHostedService<Commander>(p => p.GetRequiredService<Commander>());
