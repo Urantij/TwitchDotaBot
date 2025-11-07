@@ -49,11 +49,11 @@ public abstract class BaseCommand
     public static string GetTimeString(TimeSpan time)
     {
         if (time.TotalSeconds <= 60)
-            return $"{time.TotalSeconds:F0} секунд";
+            return $"{time.TotalSeconds:F0}с";
 
         if (time.TotalMinutes <= 60)
-            return $"{time.TotalMinutes:F0} минут";
+            return $"{time.TotalMinutes:F0}м";
 
-        return $"{time.TotalHours:F0} часов";
+        return $"{time.TotalHours:F0}ч";
     }
 }
