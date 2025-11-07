@@ -30,12 +30,24 @@ public class LastCommand : BaseCommand
 
         if (recentOver.MatchResult == MatchResult.Finished)
         {
+            var heroes = provider.GetRequiredService<DotaHeroes>();
+
             bool? isWinner = IsWinner(recentOver, appOptions.Value.SteamId);
+
+            int? heroId = recentOver.Players?.FirstOrDefault(p => p.SteamId == appOptions.Value.SteamId)?.HeroId;
+
+            string? hero = null;
+            if (heroId != null && heroId != 0)
+            {
+                hero = heroes.GerHeroName(heroId.Value);
+            }
+
+            hero ??= "???";
 
             string reply = isWinner switch
             {
-                true => "Вин.",
-                false => "Луз.",
+                true => $"Вин {hero}.",
+                false => $"Луз {hero}.",
                 _ => "Непонятно."
             };
 
